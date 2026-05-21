@@ -1,8 +1,8 @@
 [project]
-site_name = "Cosmic Horror"
+site_name = "BioRadio Music"
 site_description = "Biosignal-controlled music — BioRadio Hackathon 2026"
-site_author = "Team Cosmic Horror"
-copyright = "Team Cosmic Horror &middot; BioRadio Hackathon 2026"
+site_author = "Team BioRadio Music"
+copyright = "Team BioRadio Music &middot; BioRadio Hackathon 2026"
 
 nav = [
   { "Home" = "index.md" },
