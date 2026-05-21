@@ -1,197 +1,150 @@
-# BioRadio Hackathon 2026
+<div align="center">
 
-Build something that uses your body's signals to control a system. Use the GLNeuroTech BioRadio to capture EMG, EOG, GSR, EEG, or IMU data, train a real-time ML classifier, and use the classifier output to control a system of your choosing.
+<img src="https://res.cloudinary.com/dumwa1w5x/image/upload/v1779376928/bioradio_raazmn.png" alt="BioRadio Music" width="720">
 
-## Hackathon Goal
+# BioRadio Music
 
-Every team follows the same pipeline:
+### Real-time biosignal-controlled musical performance
+
+*EMG from a GLNeuroTech BioRadio streams over Lab Streaming Layer, gets classified into eight hand gestures, and renders to chords + instruments through FluidSynth in real time. No DAW, no virtual MIDI routing, one Python process.*
+
+[![Docs](https://img.shields.io/badge/Docs-Zensical-blue?style=flat-square)](https://ajbarea.github.io/bioradio-music/)
+[![Python](https://img.shields.io/badge/Python-3.10+-3776AB?style=flat-square&logo=python&logoColor=white)](https://python.org)
+[![scikit-learn](https://img.shields.io/badge/scikit--learn-RandomForest-F7931E?style=flat-square&logo=scikit-learn&logoColor=white)](https://scikit-learn.org)
+[![FluidSynth](https://img.shields.io/badge/Audio-FluidSynth-A82828?style=flat-square)](https://www.fluidsynth.org/)
+[![Hackathon](https://img.shields.io/badge/AWARE--AI-Spring%202026-9d27b0?style=flat-square)](https://www.rit.edu/events/aware-ai-spring-hackathon-1)
+
+</div>
+
+---
+
+## What is this?
+
+BioRadio Music is a two-handed musical instrument controlled by forearm muscle signals. A trained classifier reads EMG windows from the BioRadio, picks a chord from your right hand and an instrument from your left, and renders the result directly to your speakers through FluidSynth. Hold a gesture and the chord sustains; tense your arm and the velocity rises in real time; drop your arm and the music stops.
 
 ```
-Biosignals ──► Feature Extraction ──► ML Classifier ──► Control System
- (BioRadio)       (your code)          (trained model)    (your choice)
+[BioRadio EMG] --LSL--> [250ms windows] --> [bandpass + notch] --> [features] -->
+[RandomForest (8 classes)] --> [chord + instrument + velocity] --> [FluidSynth] --> [audio]
 ```
 
-1. **Collect** labeled training data from the BioRadio using the hackathon GUI
-2. **Extract** meaningful features from the raw signals (RMS, frequency bands, etc.)
-3. **Train** a classifier on your features (scikit-learn, PyTorch, TensorFlow — any framework)
-4. **Classify** live BioRadio data in real-time during your demo
-5. **Control** something with the classifier output (robot, game, UI, music, hardware — your choice)
+Built in 24 hours at the AWARE-AI Spring Hackathon at RIT (Feb 2026) by Victor Lockwood, Parth Kapur, Grant Bosworth, Sophia Caruana, and AJ Barea.
 
-See **[RUBRIC.md](RUBRIC.md)** for the full judging rubric (100 pts + 10 bonus) and schedule.
+---
 
-## Quick Start
-
-### 1. Install Dependencies
+## Quick start
 
 ```bash
-# Option A: Conda (recommended)
-conda env create -f environment.yml
+git clone https://github.com/ajbarea/bioradio-music
+cd bioradio-music
+
+make setup           # conda env + scientific deps + FluidSynth bindings
 conda activate hackathon
 
-# Option B: pip
-pip install -r requirements.txt
+make music           # smoke check FluidSynth + SoundFont
+make gui             # launch the data collection GUI in mock mode
+make train           # train the gesture classifier from recorded CSVs
+make ritual          # start the real-time bridge: BioRadio --> classifier --> audio
 ```
 
-### 2. Launch the GUI
+`make help` lists every target with one-line descriptions. The full setup walkthrough lives in [Getting Started](https://ajbarea.github.io/bioradio-music/getting-started/).
 
-```bash
-# With BioRadio connected:
-python -m src.hackathon_gui
+---
 
-# Without hardware (mock data for development):
-python -m src.hackathon_gui --mock
+## What's included
+
+| | |
+|---|---|
+| **8 gesture classes** | `palm_up_out`, `palm_down_out`, `palm_down_up`, `fist_down_out`, `fist_down_up`, `peace_out`, `arm_up`, `arm_down` |
+| **7 chord voicings** | C, Am, Em, G, Dm, F, D (5-6 note voicings, not triads) |
+| **6 GM instruments** | Piano, Nylon Guitar, Steel Guitar, Electric Guitar, Strings, Pad |
+| **6 songs** | Save Your Tears, Blinding Lights, Careless Whisper, Love Story, Firework, Secrets |
+| **5 classifier variants** | RandomForest (default), KNN, LDA, SVM, XGBoost, plus an Ensemble |
+
+Full reference: [Architecture](https://ajbarea.github.io/bioradio-music/architecture/) · [MIDI Engine](https://ajbarea.github.io/bioradio-music/midi-engine/) · [Playlist](https://ajbarea.github.io/bioradio-music/playlist/)
+
+---
+
+## Signal pipeline
+
+| Stage | File | What it does |
+|---|---|---|
+| Capture | `src/hackathon_gui.py` | BioRadio serial, LSL, or mock stream + CSV recording + Music Mode toggle |
+| Real-time bridge | `src/cosmic_ritual.py` | LSL consumer with 250ms windows, 50% overlap, GUI status callbacks |
+| Preprocessing | `src/signal_processing.py` | Bandpass 20-450 Hz + 60 Hz notch |
+| Features | `src/pipeline.py` | RMS, MAV, Variance, Waveform Length, Zero Crossings |
+| Classifier | `src/pipeline.py` | RandomForest over 8 gesture classes (other variants under `models/`) |
+| Synthesis | `src/midi_engine.py` | Gesture-to-chord-to-MIDI state machine + FluidSynth (WASAPI / DirectSound / WaveOut) |
+
+---
+
+## Gesture map
+
+**Right hand selects the chord:**
+
+| Gesture | Chord |
+|---|---|
+| `palm_up_out` | C major |
+| `palm_down_out` | A minor |
+| `palm_down_up` | E minor |
+| `fist_down_out` | G major |
+| `fist_down_up` | D minor |
+| `peace_out` | F major |
+| `arm_up` | D major |
+| `arm_down` | Rest (silence) |
+
+**Left hand selects the instrument** (Piano / Nylon Guitar / Steel Guitar / Electric Guitar / Strings / Pad) using the same eight-gesture vocabulary.
+
+---
+
+## Tech stack
+
+| | |
+|---|---|
+| Hardware | GLNeuroTech BioRadio (EMG via Bluetooth serial) |
+| Transport | Lab Streaming Layer (`pylsl`) |
+| Signal processing | NumPy + SciPy + NeuroKit2 |
+| Classification | scikit-learn RandomForest (KNN / LDA / SVM / XGB variants benchmarked) |
+| Audio | FluidSynth via `pyfluidsynth`, GeneralUser GS SoundFont |
+| GUI | PyQt6 + pyqtgraph |
+| Packaging | Conda (`environment.yml`) + pip (`requirements.txt`) |
+| Docs | Zensical |
+
+---
+
+## Repository layout
+
 ```
-
-### 3. Connect and Start Streaming
-
-1. Click **Scan Ports** to find your BioRadio
-2. Click **Connect**
-3. Configure each channel's **signal type** (EMG, EOG, EEG, GSR) using the per-channel dropdowns
-4. Click **Apply Config**
-5. Click **START** to begin acquisition
-6. Check **"Stream to LSL"** to make data available to your scripts
-
-### 4. Receive Data in Your Script
-
-Use Lab Streaming Layer (LSL) to receive the data stream in your own Python script:
-
-```python
-from pylsl import StreamInlet, resolve_stream
-
-streams = resolve_stream('type', 'EEG')
-inlet = StreamInlet(streams[0])
-
-while True:
-    sample, timestamp = inlet.pull_sample()
-    # sample is a list of channel values
-    # Process, classify, and control here
-```
-
-See `examples/` for working demos.
-
-## Project Structure
-
-```
-Hackathon-2026/
+bioradio-music/
 ├── src/
-│   ├── hackathon_gui.py         # Main GUI application
-│   ├── bioradio.py              # BioRadio device driver
-│   └── signal_processing.py     # Filtering & feature extraction
-├── examples/
-│   ├── 01_connect_and_read.py   # Basic device connection
-│   └── 02_stream_to_lsl.py     # Stream data over LSL
-├── data/                        # Recorded data (git-ignored)
-├── RUBRIC.md                    # Judging rubric & schedule
-├── environment.yml              # Conda environment
-└── requirements.txt             # pip dependencies
+│   ├── hackathon_gui.py       # PyQt6 data collection GUI
+│   ├── bioradio.py            # BioRadio serial driver
+│   ├── signal_processing.py   # Filters, features, EMG/EOG/GSR/IMU utilities
+│   ├── pipeline.py            # ML pipeline: preprocess, features, classifier
+│   ├── midi_engine.py         # State machine + FluidSynth controller
+│   ├── cosmic_ritual.py       # Real-time bridge: LSL --> classifier --> MIDI
+│   ├── realtime_process.py    # Realtime processing helpers
+│   └── midi_demo.py           # FluidSynth + SoundFont smoke demo
+├── examples/                  # Minimal connect-and-stream snippets
+├── data/                      # Labeled CSVs per gesture, per recorder
+├── models/                    # Trained classifier variants (.pkl)
+├── playlist/                  # Song chord progressions (.json)
+├── soundfonts/                # GeneralUser_GS.sf2 (~30 MB)
+├── docs/                      # Zensical-built documentation site
+└── presentations/             # Hackathon kickoff + signal-type slides
 ```
 
-## Signal Types & Per-Channel Configuration
+---
 
-Each BioRadio channel can be independently configured for a specific signal type. The GUI provides a per-channel dropdown to select the signal type, which sets the appropriate hardware parameters and display scale.
+## Acknowledgments
 
-| Signal | What It Measures | Y-Range | Unit | Bit Res | Coupling |
-|--------|-----------------|---------|------|---------|----------|
-| **EMG** | Muscle electrical activity | ±5000 | µV | 16-bit | AC |
-| **EOG** | Eye movement & blinks | ±3000 | µV | 16-bit | DC |
-| **EEG** | Brain electrical activity | ±200 | µV | 24-bit | AC |
-| **GSR** | Skin conductance (sweat) | ±25 | µS | 12-bit | DC |
+Built for the **AWARE-AI Spring Hackathon at RIT (Feb 2026)** organized around the GLNeuroTech BioRadio. Forked from the team's submission repo so the URL stays under our control; the docs site here is the BioRadio Music project, not the generic hackathon starter.
 
-You can mix signal types across channels — for example, Ch1 as EMG, Ch2 as EOG, and Ch3 as EEG — just like in the BioCapture software.
+| | |
+|---|---|
+| Team | Victor Lockwood, Parth Kapur, Grant Bosworth, Sophia Caruana, AJ Barea |
+| Event | [AWARE-AI Spring Hackathon (RIT)](https://www.rit.edu/events/aware-ai-spring-hackathon-1) |
+| LinkedIn | [post · #hackathon · #appliedai · #hci](https://www.linkedin.com/posts/aj-barea_hackathon-appliedai-hci-share-7433372743804375040-QAOy) |
 
-## Architecture: How Data Flows
+---
 
-```
-[BioRadio] ──Bluetooth──► [hackathon_gui.py] ──LSL──► [your_script.py]
-                                 │                          │
-                           Visualize &                Process signals,
-                           Record CSV                 train classifier,
-                                                     control your system
-```
-
-The GUI connects to the BioRadio, displays data in real-time, and optionally streams it over LSL. Your control script connects to that LSL stream and processes the data.
-
-## GUI Features
-
-- **Connection**: Direct serial to BioRadio, LSL stream input, or mock data for development
-- **Per-Channel Config**: Set each channel's signal type independently (EMG, EOG, EEG, GSR)
-- **Visualization**: Real-time multi-channel plots with per-channel Y-axis scaling and units
-- **Recording**: Save data to CSV with team/label metadata
-- **LSL Output**: Stream data to your scripts via Lab Streaming Layer
-
-## Signal Processing Utilities
-
-`src/signal_processing.py` provides ready-to-use functions:
-
-```python
-from src.signal_processing import (
-    # Filters
-    bandpass_filter,     # Keep frequencies in a range
-    lowpass_filter,      # Remove high-frequency noise
-    highpass_filter,     # Remove DC offset / drift
-    notch_filter,        # Remove 60 Hz power line noise
-
-    # EMG
-    rectify,             # Full-wave rectification
-    envelope,            # Signal envelope extraction
-    rms,                 # Root Mean Square amplitude
-    compute_emg_features,# Feature extraction for classification
-    process_emg,         # Complete EMG pipeline
-
-    # GSR
-    process_gsr,         # Tonic/phasic decomposition
-    detect_scr_peaks,    # Skin conductance response detection
-
-    # EOG
-    process_eog,         # EOG filtering + derivative
-    detect_blinks,       # Blink detection
-    detect_saccades,     # Saccade detection
-
-    # IMU
-    compute_orientation, # Pitch/roll from accelerometer
-    compute_magnitude,   # Vector magnitude
-
-    # Utilities
-    normalize,           # Scale to [0,1] or [-1,1]
-    moving_average,      # Simple smoothing
-    threshold_crossing,  # Find when signal crosses a value
-    map_range,           # Map value between ranges
-)
-```
-
-## BioRadio Setup
-
-### Hardware
-1. Power on the BioRadio (hold button until LED flashes)
-2. Pair via Bluetooth on your computer
-3. Connect electrodes to the desired input channels
-
-### Platform Notes
-
-| Platform | Connection |
-|----------|-----------|
-| **Windows** | Bluetooth creates two COM ports. The GUI auto-detects the correct one. |
-| **macOS** | macOS Sonoma (14+) has issues with BT serial. Use LSL to stream from a Windows machine. |
-| **Linux** | Standard rfcomm serial ports. |
-
-## Tips for Success
-
-- **Start collecting data early.** Your ML pipeline is only as good as your training data.
-- **Keep your classifier simple at first.** A 2-class SVM that works beats a 10-class deep network that doesn't.
-- **Use mock mode** (`--mock`) to develop your signal processing and control logic without hardware.
-- **Configure signal types per channel** to get correct display scaling and hardware settings.
-- **Record calibration data**: Record baseline + activation data to tune your thresholds.
-- **Filter your signals**: Raw biosignals are noisy — always filter before feature extraction.
-- **Budget time for integration.** Getting the classifier to run in real-time with your control system always takes longer than expected.
-- **Have a backup plan.** If your ambitious approach doesn't work, have a simpler version ready.
-
-## Troubleshooting
-
-| Issue | Solution |
-|-------|----------|
-| "No BioRadio ports found" | Make sure device is on and paired via Bluetooth |
-| "Write timeout" | You're on the wrong COM port. Try the other one. |
-| No data in plots | Check that you clicked START after connecting |
-| LSL stream not found | Make sure the GUI is running with "Stream to LSL" checked |
-| Noisy signal | Apply bandpass + notch filter. Check electrode contact. |
-| macOS can't connect | Use LSL to stream from a Windows machine |
+*Source for [ajbarea.github.io](https://ajbarea.github.io/) project entry [`bioradio-music`](https://ajbarea.github.io/projects).*
