@@ -1,4 +1,12 @@
-/* ===== Cosmic Horror Custom Theme ===== */
+/* ===== BioRadio Music — Custom Theme ===== */
+
+/* Material Symbols Outlined font for inline icons used across the docs
+   (graphic_eq, back_hand, music_note, piano, library_music, power_plug,
+   auto_fix, account_group, rocket_launch, sitemap, playlist_music,
+   waves). Loaded via Google Fonts with an `icon_names=` filter so we
+   only pay for the glyphs the docs reference. Same approach the sister
+   docs site (phalanx-fl) uses. */
+@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&icon_names=account_group,auto_fix,back_hand,book,graphic_eq,library_music,music_note,piano,playlist_music,power_plug,rocket_launch,sitemap,waves&display=block');
 
 /* --- 1. Variables & Core Palette --- */
 :root {
