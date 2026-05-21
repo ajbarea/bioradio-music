@@ -251,6 +251,11 @@ html { scroll-behavior: smooth; }
   display: block;
   color: #000;
   font-weight: bold;
+  /* Layered with the parent h1's glitch above: the warning reads like
+     a half-broken radio transmission. Irregular opacity drop + the
+     eldritch-purple-glow drop-shadow from the keyframe bleeds the dark-
+     mode palette into the blinding truth. */
+  animation: flicker 3s infinite;
 }
 
 [data-md-color-scheme="default"] .md-typeset h1,
@@ -262,9 +267,17 @@ html { scroll-behavior: smooth; }
 
 [data-md-color-scheme="default"] .md-typeset p,
 [data-md-color-scheme="default"] .md-typeset .highlight,
-[data-md-color-scheme="default"] .md-typeset code,
 [data-md-color-scheme="default"] table {
   animation: void-blink 4s step-end infinite;
+}
+
+/* Inline code gets flicker instead of void-blink: the void-blink
+   periodic-blackout reads OK on blocks of prose but is harsh on
+   short technical strings. Flicker's irregular dimming + the
+   purple-haze drop-shadow makes inline code feel like the machine
+   is the thing speaking and it's not stable. */
+[data-md-color-scheme="default"] .md-typeset code {
+  animation: flicker 2s infinite;
 }
 
 [data-md-color-scheme="default"] .mermaid {
